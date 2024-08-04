@@ -61,7 +61,7 @@
             </div>
         </nav>
 
-        <main class="min-h-screen">
+        <main class="min-h-screen px-[247px]">
             <router-view></router-view>
         </main>
     </div>
