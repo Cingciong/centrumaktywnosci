@@ -8,6 +8,7 @@ import router from './router';
 
 import '../css/app.css';
 
+import 'alpinejs';
 
 
 createApp(app).use(router).mount('#app');

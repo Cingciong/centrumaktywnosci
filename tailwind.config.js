@@ -18,7 +18,15 @@ export default {
                 'ss-green-400': '#5AA21C',
                 'ss-green-500': '#0E6332',
             },
-
+            fontSize :{
+                'ss-sm': "14px",
+                'ss-base': "16px",
+                'ss-lg': "24px",
+            },
+            screens: {
+                'xs': '360px',
+                '3xl': '1920px',
+            },
         },
     },
     plugins: [],

@@ -7,14 +7,15 @@ import Projects from "../components/pages/user/Projects.vue";
 import News from "../components/pages/user/News.vue";
 import Donwload from "../components/pages/user/Donwload.vue";
 import GetInvolved from "../components/pages/user/GetInvolved.vue";
-import DefaultLayout from "../components/pages/user/layouts/Default.vue";
+import MainLayout from "../components/pages/user/layouts/Main.vue";
+import DefaultLayout from "@/components/pages/user/layouts/Default.vue";
 
 
 
 const routes = [
     {
         path: '/',
-        component: DefaultLayout,
+        component: MainLayout,
         children: [
             { path: '/', component: home },
         ]
@@ -35,8 +36,11 @@ const routes = [
         component: Projects,
     },
     {
-        path: '/Aktualnosci',
-        component: News,
+        path: '/aktualnosci',
+        component: DefaultLayout,
+        children: [
+            { path: '/aktualnosci', component: News },
+        ]
     },
     {
         path: '/do-pobrania',
