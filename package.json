@@ -16,6 +16,7 @@
     },
     "dependencies": {
         "alpinejs": "^3.14.1",
+        "tailwind-merge": "^2.4.0",
         "vue": "^3.4.35",
         "vue-loader": "^17.4.2",
         "vue-router": "^4.4.2"

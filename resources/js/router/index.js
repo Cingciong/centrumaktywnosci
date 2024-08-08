@@ -1,12 +1,9 @@
 import {createRouter, createWebHistory} from "vue-router";
 
 import home from "../components/pages/user/Home.vue";
-import About from "../components/pages/user/About.vue";
-import Contact from "../components/pages/user/Contact.vue";
-import Projects from "../components/pages/user/Projects.vue";
+import Reservation from "../components/pages/user/Reservation.vue";
 import News from "../components/pages/user/News.vue";
-import Donwload from "../components/pages/user/Donwload.vue";
-import GetInvolved from "../components/pages/user/GetInvolved.vue";
+
 import MainLayout from "../components/pages/user/layouts/Main.vue";
 import DefaultLayout from "@/components/pages/user/layouts/Default.vue";
 
@@ -21,19 +18,11 @@ const routes = [
         ]
     },
     {
-        path: '/o-nas',
-        component: About,
-    },
-    {
-        path: '/kontakt',
-        component: Contact,
-    },
-    {
-      path: '/dzialaj-lokalnie',
-    },
-    {
-        path: '/projekty',
-        component: Projects,
+        path: '/rezerwacje',
+        component: DefaultLayout,
+        children: [
+            { path: '/rezerwacje', component: Reservation },
+        ]
     },
     {
         path: '/aktualnosci',
@@ -41,14 +30,6 @@ const routes = [
         children: [
             { path: '/aktualnosci', component: News },
         ]
-    },
-    {
-        path: '/do-pobrania',
-        component: Donwload,
-    },
-    {
-        path: '/zaangazuj-sie',
-        component: GetInvolved,
     },
     {
         path: '/:pathMatch(.*)*',
