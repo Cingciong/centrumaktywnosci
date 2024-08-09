@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Database\Seeders\RoomsTableSeeder;
+use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Tag;
 use App\Models\Article;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
@@ -32,6 +32,6 @@ class DatabaseSeeder extends Seeder
 
         Article::factory(200)->create();
         $this->call(RoomsTableSeeder::class);
-
+        $this->call(ReservationSeeder::class);
     }
 }

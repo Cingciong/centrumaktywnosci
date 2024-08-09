@@ -23,4 +23,9 @@ class Room extends Model
         'price',
         'utilities',
     ];
+
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
+    }
 }
