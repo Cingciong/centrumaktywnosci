@@ -4,9 +4,8 @@ namespace App\Http\Controllers\Pages\News;
 
 use App\Http\Controllers\Controller;
 use App\Models\Article;
-use App\Models\Tag;
-use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
+
+
 class ArticleController extends Controller
 {
     public function index()

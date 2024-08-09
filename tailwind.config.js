@@ -7,6 +7,9 @@ export default {
     ],
     theme: {
         extend: {
+            maxWidth: {
+                '8xl': '88rem', // You can adjust this value as needed
+            },
             colors: {
                 'ss-gray-100': '#F5F6F8',
                 'ss-gray-200': '#DBDFE8',

@@ -1,14 +1,28 @@
 <script setup>
-
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
 import Button from "@/components/pages/user/partials/button.vue";
-import { ref } from 'vue';
-
+import Room from "@/components/pages/user/partials/reservations/Room.vue";
 
 let isList = ref(true);
+let rooms = ref([]);
+
+const getRooms = () => {
+    axios.get('/api/pokoje')
+        .then(response => {
+            console.log(response.data);
+            rooms.value = response.data.data;
+        })
+        .catch(error => {
+            console.log(error);
+        });
+}
+
+onMounted(getRooms);
 </script>
 
 <template>
-    <div class="flex flex-col text-ss-gray-300   sm:text-left text-center max-w-7xl mx-auto">
+    <div class="flex flex-col text-ss-gray-300   sm:text-left text-center max-w-8xl mx-auto mt-20">
         <form class="w-full h-[120px] rounded-2xl bg-white gap-4 flex flex-row items-center px-10 text-ss-sm ">
             <div class="flex flex-col">
                 <label for="date">Kim jesteś?*</label>
@@ -48,8 +62,12 @@ let isList = ref(true);
             <h1  class="text-ss-lg text-ss-gray-400">Kalendarz</h1>
         </div>
 
-        <section v-if="isList" class="">
-
+        <section v-if="isList" class="flex flex-col gap-10 mb-20">
+            <Room
+                v-for="room in rooms"
+                :key="room.id"
+                :room="room"
+            />
         </section>
 
 
