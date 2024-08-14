@@ -17,7 +17,7 @@ class ReservationController extends Controller
 
 
         if ($startDate->equalTo($endDate)) {
-            $endDate->addHours(24);
+            $endDate->copy()->setTime(23, 59, 59);
         }
 
 

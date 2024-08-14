@@ -7,6 +7,9 @@ use App\Models\Reservation;
 use App\Models\Room;
 use Illuminate\Support\Carbon;
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 class ReservationSeeder extends Seeder
 {
     /**
@@ -17,65 +20,59 @@ class ReservationSeeder extends Seeder
     public function run()
     {
         $start = now();
-        $end = now()->addDay();
+        $end = now()->addMonth();
+        $rooms = Room::all();
+
+        $totalDays = $start->diffInDays($end)+1;
+        $totalOperations = $rooms->count() * $totalDays;
+
+        $startOperationTime = microtime(true);
+        $completedOperations = 0;
 
         while ($start->lte($end)) {
-            $rooms = Room::all();
-
             foreach ($rooms as $room) {
-                $reservationsCount = rand(1, 2);
+                $start->setTime(0, 0, 0);
+                $numberOfReservations = rand(1, 3);
 
-                for ($i = 0; $i < $reservationsCount; $i++) {
-                    do {
-                        $startTime = $this->generateRandomTime();
-                        $endTime = (clone $startTime)->addHours(rand(1, 4))->addMinutes(rand(0,1)*30); // random duration between 1 and 4 hours
+                for ($i = 0; $i < $numberOfReservations; $i++) {
 
-                        $isReserved = Reservation::where('room_id', $room->id)
-                            ->where(function ($query) use ($startTime, $endTime) {
-                                $query->where(function ($query) use ($startTime, $endTime) {
-                                    $query->where('start_time', '<', $startTime)
-                                        ->where('end_time', '>', $startTime);
-                                })->orWhere(function ($query) use ($startTime, $endTime) {
-                                    $query->where('start_time', '<', $endTime)
-                                        ->where('end_time', '>', $endTime);
-                                })->orWhere(function ($query) use ($startTime, $endTime) {
-                                    $query->where('start_time', '>', $startTime)
-                                        ->where('end_time', '<', $endTime);
-                                })->orWhere(function ($query) use ($startTime, $endTime) {
-                                    $query->where('start_time', '=', $startTime)
-                                        ->where('end_time', '=', $endTime);
-                                })->orWhere(function ($query) use ($startTime, $endTime) {
-                                    $query->where('start_time', '=', $startTime)
-                                        ->where('end_time', '>', $endTime);
-                                })->orWhere(function ($query) use ($startTime, $endTime) {
-                                    $query->where('start_time', '<', $startTime)
-                                        ->where('end_time', '=', $endTime);
-                                });
-                            })->exists();
-                        // Check if the reservation time is between 7 AM and 10 PM
-                        $isBetween7and22 = $startTime->hour >= 7 && $startTime->hour < 22 && $endTime->hour >= 7 && $endTime->hour < 22;
-
-                        // Check if the start time is smaller than the end time
-                        $isStartSmallerThanEnd = $startTime->lessThan($endTime);
-                    } while ($isReserved || !$isBetween7and22 || !$isStartSmallerThanEnd);
-
-                    Reservation::create([
-                        'room_id' => $room->id,
-                        'start_time' => $startTime,
-                        'end_time' => $endTime,
-                    ]);
+                    $this->generateReservation($room, $start);
                 }
-            }
 
+                $completedOperations++;
+                $progressPercentage = ($completedOperations / $totalOperations) * 100;
+
+                $endOperationTime = microtime(true);
+                $operationDuration = ($endOperationTime - $startOperationTime) * 1000;
+
+                echo "Progress: " . round($progressPercentage, 2) . "% at " . round($operationDuration, 2) . " milliseconds.\n";
+
+            }
             $start->addDay();
         }
     }
 
-    private function generateRandomTime()
+    private function generateReservation($room, $start)
     {
-        $hour = rand(7, 19);
-        $minute = rand(0, 1) * 30;
+        $i=0;
+        do {
+            $startTime = $start->copy()->addHours(rand(7, 17))->addMinutes(rand(0, 2) * 30);
+            $endTime = $startTime->copy()->addHours(rand(1, 3))->addMinutes(rand(0, 2) * 30);
+            $i++;
+            $doesReservationExist = Reservation::where('room_id', $room->id)
+                ->where(function ($query) use ($startTime, $endTime) {
+                    $query->whereBetween('start_time', [$startTime, $endTime])
+                        ->orWhereBetween('end_time', [$startTime, $endTime]);
+                })->exists();
 
-        return now()->startOfDay()->addHours($hour)->addMinutes($minute);
+        } while ($doesReservationExist);
+
+        echo "Room: " . $room->id . " Start: " . $startTime . " End: " . $endTime . " Iterations: " . $i . "\n";
+
+        Reservation::create([
+            'room_id' => $room->id,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+        ]);
     }
 }
