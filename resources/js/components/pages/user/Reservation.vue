@@ -4,29 +4,25 @@ import axios from 'axios';
 import Button from "@/components/pages/user/partials/button.vue";
 import Room from "@/components/pages/user/partials/reservations/Room.vue";
 
+let times = computed(() => giveTimes());
 let selectedStatus = ref('day');
 let reservations = ref([]);
-let times = computed(() => {
-    let slots = [];
-    for (let i = 7; i <= 22; i += 0.5) {
-        slots.push(`${Math.floor(i).toString().padStart(2, '0')}:${(i % 1 > 0 ? '30' : '00')}`);
-    }
-    return slots;
-});
 let isList = ref(false);
 let rooms = ref([]);
 let isLoading = ref(false);
-let isWeek = ref(false);
 let currentDate = ref(null);
 let date = new Date();
 currentDate.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
 let selectedDate = ref(null);
+console.log(currentDate.value);
 selectedDate.value = currentDate.value;
-
-
 let dayName = computed(() => new Date(selectedDate.value).toLocaleDateString('pl-PL', { weekday: 'long' }));
-
+let dates = computed(() => generateDates(selectedDate.value));
+let weekSpan = computed(() => {
+    let startDate = new Date(selectedDate.value);
+    let endDate = new Date(new Date(selectedDate.value).setDate(new Date(selectedDate.value).getDate() + 6));
+    return `${startDate.toLocaleDateString('pl-PL', { day: '2-digit', month: 'long', year: 'numeric' })} - ${endDate.toLocaleDateString('pl-PL', { day: '2-digit', month: 'long', year: 'numeric' })}`;
+});
 
 watch(() => selectedDate.value, async (newDate) => {
     isLoading.value = true;
@@ -34,28 +30,36 @@ watch(() => selectedDate.value, async (newDate) => {
     await getRooms();
 
 });
-
 watchEffect(() => {
     if (isLoading.value) {
         isLoading.value = false;
     }
 });
-
-const incrementDate = () => {
-    let date = new Date(selectedDate.value);
-    date.setDate(date.getDate() + 1);
-    selectedDate.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-};
-
-const decrementDate = () => {
-    let date = new Date(selectedDate.value);
-    date.setDate(date.getDate() - 1);
-    let decrementedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
-    if(new Date(decrementedDate).getTime() >= new Date(currentDate.value).getTime()) {
-        selectedDate.value = decrementedDate;
+const selectDate = (date) => {
+    let formattedDate = new Date(date.split('-').reverse().join('-'));
+    if (!isNaN(formattedDate)) {
+        selectedDate.value = `${formattedDate.getFullYear()}-${String(formattedDate.getMonth() + 1).padStart(2, '0')}-${String(formattedDate.getDate()).padStart(2, '0')}`;
+    } else {
+        console.error('Invalid date format. The date should be in the format "DD-MM-YYYY".');
     }
 };
+const changeDate = (days = 1) => {
+    let date = new Date(selectedDate.value);
+    date.setDate(date.getDate() + days);
+    let currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    if (date < currentDate) {
+        date = currentDate;
+    }
+    selectedDate.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+const giveTimes = () => {
+    let slots = [];
+    for (let i = 7; i <= 22; i += 0.5) {
+        slots.push(`${Math.floor(i).toString().padStart(2, '0')}:${(i % 1 > 0 ? '30' : '00')}`);
+    }
+    return slots;
+}
 const isReserved = (roomId, time) => reservations.value ? reservations.value.some(reservation => reservation.room_id == roomId && reservation.tiles.some(tile => tile === time)) : false;
 const getReservationsForDay = (date) => {
     axios.get('/api/rezerwacje', { params: { start_date: date, end_date: date } })
@@ -64,12 +68,21 @@ const getReservationsForDay = (date) => {
         })
         .catch(console.log);
 }
+const generateDates = (startDate) => {
+    let datesArray = [];
+    let date = new Date(startDate);
+    for (let i = 0; i < 7; i++) {
+        let formattedDate = new Date(date.setDate(date.getDate() + i)).toLocaleDateString('en-GB', {year: 'numeric', month: '2-digit',day: '2-digit'  });
+        datesArray.push(formattedDate.replace(/\//g, '-')); // Replace slashes with hyphens
+        date = new Date(startDate);
+    }
+    return datesArray;
+}
 const getRooms = () => {
     axios.get('/api/pokoje')
         .then(response => { rooms.value = response.data.data; })
         .catch(console.log);
 }
-
 onMounted(() => {
     getReservationsForDay(selectedDate.value);
     getRooms();
@@ -119,6 +132,14 @@ onMounted(() => {
             <i class="fa-regular fa-calendar-days" @click="isList = !isList"></i>
             <h1  class="text-ss-lg text-ss-gray-400">Lista</h1>
         </div>
+        <section v-if="isList" class="flex flex-col gap-10 mb-20">
+            <Room
+                v-for="room in rooms"
+                :key="room.id"
+                :room="room"
+            />
+        </section>
+
         <div v-if="!isList" class="flex flex-row text-[30px] gap-3 my-7">
             <i class="fa-solid fa-list" @click="isList = !isList"></i>
             <i @click="isList = !isList" class="fa-regular fa-calendar-days text-ss-green-300" ></i>
@@ -132,33 +153,25 @@ onMounted(() => {
 <!--                <div :class="{ 'left-0': selectedStatus === 'day', 'right-0': selectedStatus === 'week' }" class=" transform transition bg-ss-green-300 absolute w-1/2 h-full rounded-full transition-all duration-300"></div>-->
             </div>
         </div>
-
-        <section v-if="isList" class="flex flex-col gap-10 mb-20">
-            <Room
-                v-for="room in rooms"
-                :key="room.id"
-                :room="room"
-            />
-        </section>
         <section v-if="!isList" class="flex flex-col gap-5 mb-20">
-            <div class="flex flex-row gap-10 justify-center" v-if="selectedStatus === 'day'">
-                <button @click="decrementDate"><i class="fa-solid fa-arrow-left"></i></button>
-                <div class="flex flex-col text-center text-ss-gray-300">
-                    <strong>{{selectedDate}}</strong>
-                    <strong class="text-ss-green-300">{{ dayName }}</strong>
-                </div>
-                <button @click="incrementDate"><i class="fa-solid fa-arrow-right"></i></button>
-            </div>
-            <div class="flex flex-row gap-10 justify-center" v-if="selectedStatus === 'week'">
-                <button @click="decrementDate"><i class="fa-solid fa-arrow-left"></i></button>
-                <div class="flex flex-col text-center text-ss-gray-300">
-                    <strong>{{selectedDate}}</strong>
-                    <strong class="text-ss-green-300">{{ dayName }}</strong>
-                </div>
-                <button @click="incrementDate"><i class="fa-solid fa-arrow-right"></i></button>
-            </div>
-            <div class="flex flex-col gap-10 mb-20 relative">
 
+            <div class="flex flex-row gap-10 justify-center" v-if="selectedStatus === 'day'">
+                <button @click="changeDate(-1)"><i class="fa-solid fa-arrow-left"></i></button>
+                <div class="flex flex-col text-center text-ss-gray-300">
+                    <strong>{{selectedDate}}</strong>
+                    <strong class="text-ss-green-300">{{ dayName }}</strong>
+                </div>
+                <button @click="changeDate(1) "><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+
+            <div class="flex flex-row gap-10 justify-center" v-if="selectedStatus === 'week'">
+                <button @click="changeDate(-9)"><i class="fa-solid fa-arrow-left"></i></button>
+                <div class="flex flex-col text-center text-ss-gray-300">
+                    <strong>{{ weekSpan }}</strong></div>
+                <button @click="changeDate(9)"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+
+            <div class="flex flex-col gap-10 mb-20 relative">
                 <div class="bg-white rounded-2xl w-full p-[20px]">
                     <table  v-if="selectedStatus === 'day'">
                         <thead class="border-ss-green-300 border-opacity-45 border-b-2 border-dashed ">
@@ -178,20 +191,21 @@ onMounted(() => {
                             </tr>
                         </tbody>
                     </table>
-                    <table   class="w-full" v-if="selectedStatus === 'week'">
+
+                    <table class="w-full" v-if="selectedStatus === 'week'">
                         <thead class="border-ss-green-300 border-opacity-45 border-b-2 border-dashed ">
-                        <tr class=" grid grid-cols-10 gap-2 text-ss-gray-300  text-center w-full">
+                        <tr class="grid grid-cols-8 gap-2 text-ss-gray-300 text-center w-full">
                             <th></th>
-                            <th class="font-normal pb-5 w-full" v-for="index in 9" :key="index">
-                                {{ new Date(new Date().setDate(new Date().getDate() + index)).toLocaleDateString() }}
+                            <th class="font-normal pb-5 w-full" v-for="date in dates" :key="date">
+                                {{ date }}
                             </th>
                         </tr>
                         </thead>
-                        <tbody >
-                        <tr class=" grid grid-cols-10 gap-2 border-ss-green-300 border-opacity-45 border-b-2 border-dashed py-2" v-for="time in times" :key="time">
-                            <td>{{ time}}</td>
-                            <td class="h-10 rounded-md bg-ss-green-300" v-for="index in 9" :key="index">
-
+                        <tbody>
+                        <tr class="grid grid-cols-8 gap-2 border-ss-green-300 border-opacity-45 border-b-2 border-dashed py-2" v-for="time in times" :key="time">
+                            <td>{{ time }}</td>
+                            <td   v-for="date in dates" :key="date">
+                                <button @click="selectDate(date), selectedStatus = 'day'" class="h-10 rounded-md bg-ss-green-300 w-full"></button>
                             </td>
                         </tr>
                         </tbody>
