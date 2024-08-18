@@ -20,7 +20,7 @@ class ReservationSeeder extends Seeder
     public function run()
     {
         $start = now();
-        $end = now()->addMonth();
+        $end = now()->addMonths(5);
         $rooms = Room::all();
 
         $totalDays = $start->diffInDays($end)+1;
@@ -28,6 +28,7 @@ class ReservationSeeder extends Seeder
 
         $startOperationTime = microtime(true);
         $completedOperations = 0;
+
 
         while ($start->lte($end)) {
             foreach ($rooms as $room) {
@@ -50,6 +51,10 @@ class ReservationSeeder extends Seeder
             }
             $start->addDay();
         }
+
+
+        echo "Done, operation duration: ".round($operationDuration, 2) . " milliseconds". "\n";
+
     }
 
     private function generateReservation($room, $start)
@@ -66,8 +71,6 @@ class ReservationSeeder extends Seeder
                 })->exists();
 
         } while ($doesReservationExist);
-
-        echo "Room: " . $room->id . " Start: " . $startTime . " End: " . $endTime . " Iterations: " . $i . "\n";
 
         Reservation::create([
             'room_id' => $room->id,

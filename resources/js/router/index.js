@@ -3,6 +3,7 @@ import {createRouter, createWebHistory} from "vue-router";
 import home from "../components/pages/user/Home.vue";
 import Reservation from "../components/pages/user/Reservation.vue";
 import News from "../components/pages/user/News.vue";
+import Rooms from "../components/pages/user/Rooms.vue";
 
 import MainLayout from "../components/pages/user/layouts/Main.vue";
 import DefaultLayout from "@/components/pages/user/layouts/Default.vue";
@@ -15,6 +16,13 @@ const routes = [
         component: MainLayout,
         children: [
             { path: '/', component: home },
+        ]
+    },
+    {
+        path: '/rezerwacje/sala/:id/:date',
+        component: DefaultLayout,
+        children: [
+            { path: '/rezerwacje/sala/:id/:date', component: Rooms },
         ]
     },
     {

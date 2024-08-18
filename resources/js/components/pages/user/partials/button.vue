@@ -1,15 +1,12 @@
 
 <template>
     <router-link :to="link">
-        <button :class="buttonClassRef">{{ buttonText }}</button>
+        <button class="bg-ss-green-300 py-3  font-bold text-[12px] text-white rounded-full px-5 hover:bg-ss-green-500 duration-300 ">{{ buttonText }}</button>
     </router-link>
 </template>
 
 <script setup>
-import { defineProps, ref, watch } from 'vue';
-
-
-
+import { defineProps } from 'vue';
 const props = defineProps({
     buttonText: {
         type: String,
@@ -18,12 +15,6 @@ const props = defineProps({
     link: {
         type: String,
         default: '/'
-    },
-    buttonClass: {
-        type: String,
-        default: ''
     }
 });
-
-
 </script>

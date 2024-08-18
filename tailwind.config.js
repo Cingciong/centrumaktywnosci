@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+
+
 export default {
     content: [
         "./resources/**/*.blade.php",
@@ -30,7 +32,11 @@ export default {
                 'xs': '360px',
                 '3xl': '1920px',
             },
+            lineClamp: {}, // Add this line
         },
     },
-    plugins: [],
+    plugins: [
+        require('@tailwindcss/typography'),
+        require('@tailwindcss/line-clamp'),
+    ],
 }

@@ -1,92 +1,48 @@
 <script setup>
-import { ref, onMounted, computed, watch,  watchEffect } from 'vue';
-import axios from 'axios';
+import { onMounted, watch} from 'vue';
+
 import Button from "@/components/pages/user/partials/button.vue";
 import Room from "@/components/pages/user/partials/reservations/Room.vue";
+import Breadcrumb from "@/components/pages/user/partials/Breadcrumb.vue";
 
-let times = computed(() => giveTimes());
-let selectedStatus = ref('day');
-let reservations = ref([]);
-let isList = ref(false);
-let rooms = ref([]);
-let isLoading = ref(false);
-let currentDate = ref(null);
-let date = new Date();
-currentDate.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-let selectedDate = ref(null);
-console.log(currentDate.value);
-selectedDate.value = currentDate.value;
-let dayName = computed(() => new Date(selectedDate.value).toLocaleDateString('pl-PL', { weekday: 'long' }));
-let dates = computed(() => generateDates(selectedDate.value));
-let weekSpan = computed(() => {
-    let startDate = new Date(selectedDate.value);
-    let endDate = new Date(new Date(selectedDate.value).setDate(new Date(selectedDate.value).getDate() + 6));
-    return `${startDate.toLocaleDateString('pl-PL', { day: '2-digit', month: 'long', year: 'numeric' })} - ${endDate.toLocaleDateString('pl-PL', { day: '2-digit', month: 'long', year: 'numeric' })}`;
-});
+import { selectDate ,changeDate, isReserved, getReservationsForDay, getRooms, useReservation } from '../../../utils/reservations/reservationTable.js';
+
+const {
+  times,
+  reservations,
+  isList,
+  selectedStatus,
+  rooms,
+  isLoading,
+  selectedDate,
+  dayName,
+  dates,
+  weekSpan
+} = useReservation();
 
 watch(() => selectedDate.value, async (newDate) => {
-    isLoading.value = true;
-    await getReservationsForDay(newDate);
-    await getRooms();
+  isLoading.value = true;
+  reservations.value = await getReservationsForDay(selectedDate.value);
+  rooms.value = await getRooms();
+  isLoading.value = false;
 
 });
-watchEffect(() => {
-    if (isLoading.value) {
-        isLoading.value = false;
-    }
-});
-const selectDate = (date) => {
-    let formattedDate = new Date(date.split('-').reverse().join('-'));
-    if (!isNaN(formattedDate)) {
-        selectedDate.value = `${formattedDate.getFullYear()}-${String(formattedDate.getMonth() + 1).padStart(2, '0')}-${String(formattedDate.getDate()).padStart(2, '0')}`;
-    } else {
-        console.error('Invalid date format. The date should be in the format "DD-MM-YYYY".');
-    }
+
+const updateSelectedDate = (days) => {
+  selectedDate.value = changeDate(days, selectedDate);
 };
-const changeDate = (days = 1) => {
-    let date = new Date(selectedDate.value);
-    date.setDate(date.getDate() + days);
-    let currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    if (date < currentDate) {
-        date = currentDate;
-    }
-    selectedDate.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const changeDateTo = (date) => {
+  selectedDate.value = selectDate(date, selectedDate);
 };
-const giveTimes = () => {
-    let slots = [];
-    for (let i = 7; i <= 22; i += 0.5) {
-        slots.push(`${Math.floor(i).toString().padStart(2, '0')}:${(i % 1 > 0 ? '30' : '00')}`);
-    }
-    return slots;
-}
-const isReserved = (roomId, time) => reservations.value ? reservations.value.some(reservation => reservation.room_id == roomId && reservation.tiles.some(tile => tile === time)) : false;
-const getReservationsForDay = (date) => {
-    axios.get('/api/rezerwacje', { params: { start_date: date, end_date: date } })
-        .then(response => {
-            reservations.value = response.data;
-        })
-        .catch(console.log);
-}
-const generateDates = (startDate) => {
-    let datesArray = [];
-    let date = new Date(startDate);
-    for (let i = 0; i < 7; i++) {
-        let formattedDate = new Date(date.setDate(date.getDate() + i)).toLocaleDateString('en-GB', {year: 'numeric', month: '2-digit',day: '2-digit'  });
-        datesArray.push(formattedDate.replace(/\//g, '-')); // Replace slashes with hyphens
-        date = new Date(startDate);
-    }
-    return datesArray;
-}
-const getRooms = () => {
-    axios.get('/api/pokoje')
-        .then(response => { rooms.value = response.data.data; })
-        .catch(console.log);
-}
-onMounted(() => {
-    getReservationsForDay(selectedDate.value);
-    getRooms();
+
+onMounted(async () => {
+  reservations.value = await getReservationsForDay(selectedDate.value);
+  rooms.value = await getRooms();
+  console.log( reservations.value[0]);
+  console.log( rooms.value);
 });
+
+
 </script>
 
 <template>
@@ -97,8 +53,15 @@ onMounted(() => {
             <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
         </svg>
     </div>
+
     <div class="flex flex-col text-ss-gray-300   sm:text-left text-center max-w-8xl mx-auto mt-20"
+
          :class="{ 'opacity-15': isLoading, 'opacity-100': !isLoading}">
+        <Breadcrumb :crumbs="[
+  { text: 'Strona główna', href: '/' },
+  { text: 'Rezerwacje', href: '/rezerwacje' },
+
+]" />
         <form class="w-full h-[120px] rounded-2xl bg-white gap-4 flex flex-row items-center px-10 text-ss-sm ">
             <div class="flex flex-col">
                 <label for="date">Kim jesteś?*</label>
@@ -156,41 +119,45 @@ onMounted(() => {
         <section v-if="!isList" class="flex flex-col gap-5 mb-20">
 
             <div class="flex flex-row gap-10 justify-center" v-if="selectedStatus === 'day'">
-                <button @click="changeDate(-1)"><i class="fa-solid fa-arrow-left"></i></button>
+              <button @click="updateSelectedDate(-1)"><i class="fa-solid fa-arrow-left"></i></button>
                 <div class="flex flex-col text-center text-ss-gray-300">
                     <strong>{{selectedDate}}</strong>
                     <strong class="text-ss-green-300">{{ dayName }}</strong>
                 </div>
-                <button @click="changeDate(1) "><i class="fa-solid fa-arrow-right"></i></button>
+              <button @click="updateSelectedDate(1)"><i class="fa-solid fa-arrow-right"></i></button>
             </div>
 
             <div class="flex flex-row gap-10 justify-center" v-if="selectedStatus === 'week'">
-                <button @click="changeDate(-9)"><i class="fa-solid fa-arrow-left"></i></button>
+              <button @click="updateSelectedDate(-9)"><i class="fa-solid fa-arrow-left"></i></button>
                 <div class="flex flex-col text-center text-ss-gray-300">
                     <strong>{{ weekSpan }}</strong></div>
-                <button @click="changeDate(9)"><i class="fa-solid fa-arrow-right"></i></button>
+              <button @click="updateSelectedDate(9)"><i class="fa-solid fa-arrow-right"></i></button>
             </div>
 
             <div class="flex flex-col gap-10 mb-20 relative">
                 <div class="bg-white rounded-2xl w-full p-[20px]">
-                    <table  v-if="selectedStatus === 'day'">
-                        <thead class="border-ss-green-300 border-opacity-45 border-b-2 border-dashed ">
-                            <tr class=" grid grid-cols-10 gap-2 text-ss-gray-300  text-center">
-                                <th></th>
-                                <th  class=" font-normal pb-5" v-for="room in rooms" :key="room.id">{{ room.name  }}</th>
-                            </tr>
-                        </thead>
-                        <tbody >
-                            <tr class=" grid grid-cols-10 gap-2 border-ss-green-300 border-opacity-45 border-b-2 border-dashed py-2" v-for="time in times" :key="time">
-                                <td>{{ time}}</td>
-                                <td v-for="room in rooms" :key="room.id"
-                                    :class="{ 'bg-ss-green-300': !isReserved(room.id, time), 'bg-red-500': isReserved(room.id, time) }"
-                                    class="h-10 rounded-md"
-                                    :value="`${isReserved(room.id, time)}-${time}`">
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+
+                  <table v-if="selectedStatus === 'day'">
+                    <thead class="border-ss-green-300 border-opacity-45 border-b-2 border-dashed ">
+                    <tr class=" grid grid-cols-10 gap-2 text-ss-gray-300  text-center">
+                      <th></th>
+                      <th class=" font-normal pb-5" v-for="room in rooms" :key="room.id">{{ room.name  }}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class=" grid grid-cols-10 gap-2 border-ss-green-300 border-opacity-45 border-b-2 border-dashed py-2" v-for="time in times" :key="time">
+                      <td>{{ time }}</td>
+                      <td v-for="room in rooms" :key="room.id"
+                          :class="{ 'bg-ss-green-300': !isReserved(room.id, time, reservations), 'bg-red-500': isReserved(room.id, time, reservations) }"
+                          class="h-10 rounded-md"
+                          :value="`${isReserved(room.id, time, reservations)}-${time}`">
+                        <router-link v-if="!isReserved(room.id, time, reservations)" :to="`/rezerwacje/sala/${room.id}/${selectedDate}`">
+                          <button class="w-full h-full"></button>
+                        </router-link>
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
 
                     <table class="w-full" v-if="selectedStatus === 'week'">
                         <thead class="border-ss-green-300 border-opacity-45 border-b-2 border-dashed ">
@@ -205,11 +172,12 @@ onMounted(() => {
                         <tr class="grid grid-cols-8 gap-2 border-ss-green-300 border-opacity-45 border-b-2 border-dashed py-2" v-for="time in times" :key="time">
                             <td>{{ time }}</td>
                             <td   v-for="date in dates" :key="date">
-                                <button @click="selectDate(date), selectedStatus = 'day'" class="h-10 rounded-md bg-ss-green-300 w-full"></button>
+                                <button @click="changeDateTo(date), selectedStatus = 'day'" class="h-10 rounded-md bg-ss-green-300 w-full"></button>
                             </td>
                         </tr>
                         </tbody>
                     </table>
+
                 </div>
             </div>
         </section>

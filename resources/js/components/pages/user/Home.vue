@@ -19,7 +19,7 @@ import Button from "@/components/pages/user/partials/button.vue";
             </div>
 
         </div>
-        <div class="   grid-rows-3 mb-10 relative 3xl:w-[600px] 3xl:h-[678.7680px] md:w-[450px] md:h-[509.0760px]    mx-auto text-white font-semibold max-sm:text-xs md:block sm:hidden">
+        <div class="   grid-rows-3 mb-14 relative 3xl:w-[600px] 3xl:h-[678.7680px] md:w-[450px] md:h-[509.0760px]    mx-auto text-white font-semibold max-sm:text-xs md:block sm:hidden">
             <div class="grid-cols-2 ">
                 <div class="absolute w-1/2 hover:right-[53.5%]  hover:top-[-4%] top-0 right-[51%] duration-500 shadow-ss-green-200 ">
                     <img    src='../../../../../public/assets/hexagon/ngo.png'>
