@@ -54,7 +54,7 @@ onMounted(async () => {
         </svg>
     </div>
 
-    <div class="flex flex-col text-ss-gray-300   sm:text-left text-center max-w-8xl mx-auto mt-20"
+    <div class="flex flex-col text-ss-gray-300   sm:text-left text-center max-w-8xl mx-auto mt-20 "
 
          :class="{ 'opacity-15': isLoading, 'opacity-100': !isLoading}">
         <Breadcrumb :crumbs="[
@@ -62,8 +62,8 @@ onMounted(async () => {
   { text: 'Rezerwacje', href: '/rezerwacje' },
 
 ]" />
-        <form class="w-full h-[120px] rounded-2xl bg-white gap-4 flex flex-row items-center px-10 text-ss-sm ">
-            <div class="flex flex-col">
+        <form class="lg:w-full w-3/4 mx-auto lg:h-[120px] h-fit lg:py-0 py-10 rounded-2xl bg-white gap-4 flex lg:flex-row flex-col items-center px-10 text-ss-sm ">
+            <div class="flex flex-col ">
                 <label for="date">Kim jesteś?*</label>
                 <select class="border-ss-gray-200 border rounded-lg text-[16px] p-2">
                     <option value="1">Firma (usłga płatna)</option>
@@ -86,11 +86,11 @@ onMounted(async () => {
                 <input class="border-ss-gray-200 border rounded-lg text-[16px] p-2" type="date" id="date" name="date">
             </div>
             <div class="flex justify-end w-full ">
-                <button type="submit" class=" uppercase bg-ss-green-300 py-3 px-4 rounded-full font-bold text-ss-base text-white tracking-wide">sprawdź dostępność </button>
+                <button type="submit" class=" lg:mx-0 mx-auto uppercase bg-ss-green-300 py-3 px-4 rounded-full font-bold text-ss-base text-white tracking-wide">sprawdź dostępność </button>
             </div>
         </form>
 
-        <div v-if="isList" class="flex flex-row text-[30px] gap-3 my-7">
+        <div v-if="isList" class="flex flex-row text-[30px] gap-3 my-7 mx-auto xl:mx-0">
             <i class="fa-solid text-ss-green-300 fa-list" @click="isList = !isList"></i>
             <i class="fa-regular fa-calendar-days" @click="isList = !isList"></i>
             <h1  class="text-ss-lg text-ss-gray-400">Lista</h1>

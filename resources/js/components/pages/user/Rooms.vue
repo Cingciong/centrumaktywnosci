@@ -1,5 +1,5 @@
 <script setup>
-
+import dayjs from 'dayjs';
 import {
   changeDate,
   useReservation,
@@ -26,7 +26,7 @@ let roomData = ref({
 const {
   times,
   reservations,
-  rooms,
+  tilesInCart,
   isLoading,
   selectedDate,
   dates,
@@ -51,6 +51,51 @@ watch(() => selectedDate.value, async (newDate) => {
 
 const updateSelectedDate = (days) => {
   selectedDate.value = changeDate(days, selectedDate);
+};
+const itemExistsInCart = (roomId, date,start_time) => {
+  let {startDate, endDate} = formatIncomingData(date,start_time);
+  return tilesInCart.value.some(tile =>
+      tile.room_id === roomId &&
+      tile.start_time === startDate &&
+      tile.end_time === endDate
+  );
+};
+
+const formatIncomingData = (date,start_time) => {
+  let dateParts = date.split('-');
+  let formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+
+  let startDate = formattedDate+' '+start_time;
+  startDate = dayjs(startDate).format('YYYY-MM-DD HH:mm:ss');
+  let endDate = dayjs(startDate).add(30, 'minutes').format('YYYY-MM-DD HH:mm:ss');
+  return {startDate, endDate};
+}
+const addToCart = (roomId, date, start_time) => {
+  console.log(tilesInCart.value)
+  let {startDate, endDate} = formatIncomingData(date,start_time);
+
+  let itemExists = tilesInCart.value.some(tile =>
+      tile.room_id === roomId &&
+      tile.start_time === startDate &&
+      tile.end_time === endDate
+  );
+
+  if (itemExists) {
+    tilesInCart.value = tilesInCart.value.filter(tile =>
+        !(tile.room_id === roomId &&
+            tile.start_time === startDate &&
+            tile.end_time === endDate)
+    );
+  } else {
+    tilesInCart.value.push({
+      room_id: roomId,
+      start_time: startDate,
+      end_time: endDate
+    });
+  }
+};
+const addToCartHandler = (roomId, date, time) => {
+  addToCart(roomId, date, time);
 };
 
 const isReservedForDay = (roomId, date, time, reservations) => {
@@ -86,8 +131,8 @@ onMounted(async () => {
             <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
         </svg>
     </div>
-  <div class="flex flex-col text-ss-gray-300   sm:text-left text-center max-w-8xl mx-auto mt-20"
-       :class="{ 'opacity-15': isLoading, 'opacity-100': !isLoading}">>
+  <div class="flex flex-col text-ss-gray-300   sm:text-left text-center  mx-auto mt-20 max-w-8xl"
+       :class="{ 'opacity-15': isLoading, 'opacity-100': !isLoading}">
 
     <Breadcrumb :crumbs="[
       { text: 'Strona główna', href: '/' },
@@ -121,7 +166,7 @@ onMounted(async () => {
                   <p class="font-normal pr-28
                    text-ss-gray-400 text-[16px] line-clamp-6 ">{{ roomData.description }}</p>
                   <div class="flex flex-col gap-2 mt-auto">
-                    <p class="font-normal text-[14px] text-lg mt-16 text-left">cena za 1h:<strong class="text-[24px] font-bold text-ss-gray-400">{{ roomData.price }}zł / 1h </strong></p>
+                    <p class="font-normal text-[14px] text-lg mt-16 text-left ">cena za 1h:<strong class="text-[24px] font-bold text-ss-gray-400">{{ roomData.price }}zł / 1h </strong></p>
                     <button class="border-2  rounded-full border-ss-green-300 text-ss-green-300 uppercase px-10 py-2 hover:bg-ss-green-300 hover:text-white duration-300 w-48">zobacz</button>
                   </div>
             </div>
@@ -152,10 +197,18 @@ onMounted(async () => {
             <tr class="grid grid-cols-8 gap-2 border-ss-green-300 border-opacity-45 border-b-2 border-dashed py-2" v-for="time in times" :key="time">
               <td>{{ time }}</td>
               <td v-for="date in dates" :key="date">
+                  <button  class="h-10 rounded-md w-full bg-ss-green-300 opacity-25" v-if="isReservedForDay(roomId,date,time,reservations)"></button>
                 <button
-                    class="h-10 rounded-md w-full"
-                    :class="isReservedForDay(roomId,date,time,reservations) ? 'bg-red-500' : 'bg-ss-green-300'"
-                ></button>
+                    @click="addToCartHandler(roomId, date, time)"
+                    v-else
+                    :class="{
+    'h-10 rounded-md w-full bg-ss-green-300 transition-all': true,
+    'bg-ss-green-500 text-white': itemExistsInCart(roomId, date,time),
+    'bg-ss-green-300 text-ss-300': !itemExistsInCart(roomId, date,time),
+  }"
+                >
+                  <i  v-if="itemExistsInCart(roomId, date,time)" class="fa-solid fa-check "></i>
+                </button>
               </td>
             </tr>
             </tbody>

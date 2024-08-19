@@ -10,8 +10,8 @@ const props = defineProps({
 </script>
 
 <template>
-  <nav class="mb-10">
-    <ul class="flex flex-row gap-2 text-ss-gray-300 text-ss-sm">
+  <nav class="mb-10 md:mx-0 mx-auto">
+    <ul class="flex flex-row gap-2 text-ss-gray-300 text-ss-sm ">
       <li v-for="(crumb, index) in props.crumbs" :key="index" class="" :class="{ 'active': index === props.crumbs.length - 1 }">
         <router-link v-if="index !== props.crumbs.length - 1" :to="crumb.href">{{ crumb.text }}</router-link>
         <span v-else>{{ crumb.text }}</span>

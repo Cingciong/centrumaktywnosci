@@ -6,6 +6,7 @@ export function useReservation() {
     const times = computed(() => giveTimes());
     const reservations = ref([]);
     const isList = ref(true);
+    const tilesInCart = ref([]);
     const selectedStatus = ref('day');
     const rooms = ref([]);
     const isLoading = ref(false);
@@ -29,12 +30,15 @@ export function useReservation() {
         }
     };
 
+
+
     const computedRefs = Object.keys(computedProperties).reduce((acc, key) => {
         acc[key] = computed(computedProperties[key]);
         return acc;
     }, {});
 
     return {
+        tilesInCart,
         times,
         reservations,
         isList,
