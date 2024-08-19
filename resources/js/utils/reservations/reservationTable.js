@@ -6,7 +6,6 @@ export function useReservation() {
     const times = computed(() => giveTimes());
     const reservations = ref([]);
     const isList = ref(true);
-    const tilesInCart = ref([]);
     const selectedStatus = ref('day');
     const rooms = ref([]);
     const isLoading = ref(false);
@@ -38,7 +37,7 @@ export function useReservation() {
     }, {});
 
     return {
-        tilesInCart,
+
         times,
         reservations,
         isList,
@@ -71,7 +70,7 @@ export const fetchRoomData = async (roomId) => {
 };
 export const giveTimes = () => {
     let slots = [];
-    for (let i = 7; i <= 22; i += 0.5) {
+    for (let i = 7; i <= 21.5; i += 0.5) {
         slots.push(`${Math.floor(i).toString().padStart(2, '0')}:${(i % 1 > 0 ? '30' : '00')}`);
     }
     return slots;

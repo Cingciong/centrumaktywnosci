@@ -1,5 +1,6 @@
 <script setup>
 import dayjs from 'dayjs';
+
 import {
   changeDate,
   useReservation,
@@ -26,20 +27,52 @@ let roomData = ref({
 const {
   times,
   reservations,
-  tilesInCart,
   isLoading,
   selectedDate,
   dates,
   weekSpan
 } = useReservation();
 const room = ref(null);
+const tilesInCart = ref([]);
 const route = useRoute();
 const router = useRouter();
 const roomId = parseInt(route.params.id, 10);
 const routeDate = route.params.date ;
 selectedDate.value = routeDate;
+const cart = ref([]);
 
+function sortCart(tilesInCart) {
+  let sortedTiles = tilesInCart.sort((a, b) => a.start_time.localeCompare(b.start_time));
 
+  let groupedTiles = [];
+  let currentGroup = null;
+
+  for (let tile of sortedTiles) {
+    let startDate = tile.start_time.split(' ')[0];
+    let endDate = tile.end_time.split(' ')[0];
+
+    if (currentGroup && currentGroup.end_time === tile.start_time) {
+      currentGroup.end_time = tile.end_time;
+      currentGroup.tiles += 1;
+    } else {
+      if (currentGroup) {
+        groupedTiles.push(currentGroup);
+      }
+      currentGroup = {
+        date: startDate,
+        start_time: tile.start_time,
+        end_time: tile.end_time,
+        tiles: tilesInCart.filter(t => t.start_time === tile.start_time).length,
+        allTiles: tilesInCart.length,
+      };
+    }
+  }
+  if (currentGroup) {
+    groupedTiles.push(currentGroup);
+  }
+
+  return groupedTiles;
+}
 
 watch(() => selectedDate.value, async (newDate) => {
   console.log(newDate);
@@ -49,6 +82,10 @@ watch(() => selectedDate.value, async (newDate) => {
   isLoading.value = false;
 });
 
+watch(() => tilesInCart.value, (newCart) => {
+  cart.value = sortCart(newCart);
+  console.log('cart.value:', cart.value);
+}, { deep: true });
 const updateSelectedDate = (days) => {
   selectedDate.value = changeDate(days, selectedDate);
 };
@@ -60,7 +97,6 @@ const itemExistsInCart = (roomId, date,start_time) => {
       tile.end_time === endDate
   );
 };
-
 const formatIncomingData = (date,start_time) => {
   let dateParts = date.split('-');
   let formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
@@ -71,7 +107,6 @@ const formatIncomingData = (date,start_time) => {
   return {startDate, endDate};
 }
 const addToCart = (roomId, date, start_time) => {
-  console.log(tilesInCart.value)
   let {startDate, endDate} = formatIncomingData(date,start_time);
 
   let itemExists = tilesInCart.value.some(tile =>
@@ -93,11 +128,11 @@ const addToCart = (roomId, date, start_time) => {
       end_time: endDate
     });
   }
+  console.log('tilesInCart.value after adding:', tilesInCart.value);
 };
 const addToCartHandler = (roomId, date, time) => {
   addToCart(roomId, date, time);
 };
-
 const isReservedForDay = (roomId, date, time, reservations) => {
   if (reservations) {
     for (let reservation of reservations) {
@@ -115,6 +150,8 @@ const isReservedForDay = (roomId, date, time, reservations) => {
   }
   return false;
 }
+
+
 
 
 
@@ -173,7 +210,7 @@ onMounted(async () => {
         </article>
     </section>
     <section class="grid grid-cols-12 gap-10 mb-10">
-        <article class="col-span-8 min-h-screen w-full p-[20px] bg-white rounded-2xl flex flex-col gap-4">
+        <article class="col-span-7 min-h-screen w-full p-[20px] bg-white rounded-2xl flex flex-col gap-4">
           <h1 class="text-ss-lg text-ss-gray-400 font-bold mb-2">Terminy Rezerwacji</h1>
           <div class="flex flex-row gap-10 justify-center">
             <button @click="updateSelectedDate(-7)"><i class="fa-solid fa-arrow-left"></i></button>
@@ -215,9 +252,24 @@ onMounted(async () => {
           </table>
 
         </article>
-        <article class="col-span-4 pb-20 h-fit w-full p-[20px] bg-white rounded-2xl">
-          <h1 class="text-ss-lg text-ss-gray-400 font-bold mb-2">Twoje terminy</h1>
-          <p>Brak dodanych terminów</p>
+        <article class="col-span-5  h-fit w-full p-[30px] bg-white rounded-2xl">
+          <h1 class="text-ss-lg text-ss-gray-400 font-bold mb-6">Twoje terminy</h1>
+
+          <p v-if="cart.length === 0">Brak dodanych terminów</p>
+          <div class="flex flex-row h-fit border border-gray-300 justify-between mb-3" v-for="(group, index) in cart" :key="index">
+            <div class="flex flex-col p-3 gap-1">
+              <span class="text-ss-gray-300">{{ group.start_time }} - {{ group.end_time }}</span>
+              <span class="text-red-500">Minimalna długość rezerwacji to 1h</span>
+            </div>
+            <span class="text-lg text-center my-auto text-ss-gray-400 text-[33px]">
+              {{ group.tiles * roomData.price }}zł
+            </span>
+            <button class="hover:opacity-65 duration-300 bg-ss-gray-200 text-ss-gray-400 text-opacity-80 justify-self-end w-24 text-center flex items-center justify-center" @click="removeFromCart(index)">
+              <i class="fa-solid fa-x align-middle"></i>
+            </button>
+          </div>
+          <p class=" text-right my-7 ">Razem: <strong class="text-[36px] text-ss-gray-400"> 80zł</strong></p>
+          <button class="border-2  rounded-full border-ss-green-300 text-ss-green-300 uppercase px-10 py-2 hover:bg-ss-green-300 hover:text-white duration-300 w-full font-semibold">Dodaj do koszyka</button>
         </article>
 
     </section>
