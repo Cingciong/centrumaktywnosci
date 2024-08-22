@@ -40,6 +40,8 @@ const roomId = parseInt(route.params.id, 10);
 const routeDate = route.params.date ;
 selectedDate.value = routeDate;
 const cart = ref([]);
+const allTiles = ref([]);
+
 
 function sortCart(tilesInCart) {
   let sortedTiles = tilesInCart.sort((a, b) => a.start_time.localeCompare(b.start_time));
@@ -54,6 +56,7 @@ function sortCart(tilesInCart) {
     if (currentGroup && currentGroup.end_time === tile.start_time) {
       currentGroup.end_time = tile.end_time;
       currentGroup.tiles += 1;
+      currentGroup.duration += 30;
     } else {
       if (currentGroup) {
         groupedTiles.push(currentGroup);
@@ -64,6 +67,7 @@ function sortCart(tilesInCart) {
         end_time: tile.end_time,
         tiles: tilesInCart.filter(t => t.start_time === tile.start_time).length,
         allTiles: tilesInCart.length,
+        duration: tilesInCart.filter(t => t.start_time === tile.start_time).length*30,
       };
     }
   }
@@ -81,11 +85,26 @@ watch(() => selectedDate.value, async (newDate) => {
   reservations.value = await getReservationsForRoom(selectedDate.value, roomId);
   isLoading.value = false;
 });
-
 watch(() => tilesInCart.value, (newCart) => {
   cart.value = sortCart(newCart);
-  console.log('cart.value:', cart.value);
+  if (cart.value.length > 0 && cart.value[0]){
+    allTiles.value =  cart.value[0].allTiles;
+  } else {
+    allTiles.value = null;
+  }
+  console.log(cart.value);
+
 }, { deep: true });
+
+function removeFromCart(index) {
+  let groupToRemove = cart.value[index];
+
+  tilesInCart.value = tilesInCart.value.filter(tile =>
+      !(tile.start_time >= groupToRemove.start_time && tile.end_time <= groupToRemove.end_time)
+  );
+
+  cart.value.splice(index, 1);
+}
 const updateSelectedDate = (days) => {
   selectedDate.value = changeDate(days, selectedDate);
 };
@@ -112,8 +131,11 @@ const addToCart = (roomId, date, start_time) => {
   let itemExists = tilesInCart.value.some(tile =>
       tile.room_id === roomId &&
       tile.start_time === startDate &&
-      tile.end_time === endDate
+      tile.end_time === endDate,
   );
+
+
+
 
   if (itemExists) {
     tilesInCart.value = tilesInCart.value.filter(tile =>
@@ -128,7 +150,7 @@ const addToCart = (roomId, date, start_time) => {
       end_time: endDate
     });
   }
-  console.log('tilesInCart.value after adding:', tilesInCart.value);
+
 };
 const addToCartHandler = (roomId, date, time) => {
   addToCart(roomId, date, time);
@@ -150,9 +172,6 @@ const isReservedForDay = (roomId, date, time, reservations) => {
   }
   return false;
 }
-
-
-
 
 
 onMounted(async () => {
@@ -256,10 +275,11 @@ onMounted(async () => {
           <h1 class="text-ss-lg text-ss-gray-400 font-bold mb-6">Twoje terminy</h1>
 
           <p v-if="cart.length === 0">Brak dodanych terminów</p>
+
           <div class="flex flex-row h-fit border border-gray-300 justify-between mb-3" v-for="(group, index) in cart" :key="index">
             <div class="flex flex-col p-3 gap-1">
-              <span class="text-ss-gray-300">{{ group.start_time }} - {{ group.end_time }}</span>
-              <span class="text-red-500">Minimalna długość rezerwacji to 1h</span>
+              <span class="text-ss-gray-300">{{ dayjs(group.start_time).format('HH:mm') }}-{{  dayjs(group.end_time).format('HH:mm')}} {{group.date}}</span>
+              <span class="text-red-500" v-if="group.duration < 60">Minimalna długość rezerwacji to 1h</span>
             </div>
             <span class="text-lg text-center my-auto text-ss-gray-400 text-[33px]">
               {{ group.tiles * roomData.price }}zł
@@ -268,8 +288,9 @@ onMounted(async () => {
               <i class="fa-solid fa-x align-middle"></i>
             </button>
           </div>
-          <p class=" text-right my-7 ">Razem: <strong class="text-[36px] text-ss-gray-400"> 80zł</strong></p>
-          <button class="border-2  rounded-full border-ss-green-300 text-ss-green-300 uppercase px-10 py-2 hover:bg-ss-green-300 hover:text-white duration-300 w-full font-semibold">Dodaj do koszyka</button>
+
+          <p class=" text-right my-7" v-if="!(cart.length === 0)">Razem: <strong class="text-[36px] text-ss-gray-400">{{allTiles*roomData.price}} zł</strong></p>
+          <button v-if="!(cart.length === 0)" class="border-2  rounded-full border-ss-green-300 text-ss-green-300 uppercase px-10 py-2 hover:bg-ss-green-300 hover:text-white duration-300 w-full font-semibold">Dodaj do koszyka</button>
         </article>
 
     </section>
